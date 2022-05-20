@@ -1,22 +1,12 @@
 /****************************************************************************
 **
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
+** Copyright (C) 2015 The Qt Company Ltd.
+** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the examples of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** BSD License Usage
-** Alternatively, you may use this file under the terms of the BSD license
-** as follows:
+** You may use this file under the terms of the BSD license as follows:
 **
 ** "Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are
@@ -48,26 +38,22 @@
 **
 ****************************************************************************/
 
-
-
 #include "mainwindow.h"
 #include <QLoggingCategory>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
-    m_speech(nullptr)
+    m_speech(0)
 {
     ui.setupUi(this);
     QLoggingCategory::setFilterRules(QStringLiteral("qt.speech.tts=true \n qt.speech.tts.*=true"));
 
     // Populate engine selection list
     ui.engine->addItem("Default", QString("default"));
-
-    const auto engines = QTextToSpeech::availableEngines();
-    for (const QString &engine : engines)
+    foreach (QString engine, QTextToSpeech::availableEngines())
         ui.engine->addItem(engine, engine);
     ui.engine->setCurrentIndex(0);
-    engineSelected(1);
+    engineSelected(0);
 
     connect(ui.speakButton, &QPushButton::clicked, this, &MainWindow::speak);
     connect(ui.pitch, &QSlider::valueChanged, this, &MainWindow::setPitch);
@@ -87,13 +73,11 @@ void MainWindow::stop()
 
 void MainWindow::setRate(int rate)
 {
-    qDebug()<< "rate : " << rate;
     m_speech->setRate(rate / 10.0);
 }
 
 void MainWindow::setPitch(int pitch)
 {
-     qDebug()<< "pitch : " << pitch;
     m_speech->setPitch(pitch / 10.0);
 }
 
@@ -115,7 +99,7 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 
     ui.pauseButton->setEnabled(state == QTextToSpeech::Speaking);
     ui.resumeButton->setEnabled(state == QTextToSpeech::Paused);
-    ui.stopButton->setEnabled(state == QTextToSpeech::Speaking || state == QTextToSpeech::Paused);
+    ui.stopButton->setEnabled(state == QTextToSpeech::Speaking || QTextToSpeech::Paused);
 }
 
 void MainWindow::engineSelected(int index)
@@ -129,15 +113,13 @@ void MainWindow::engineSelected(int index)
     disconnect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
     ui.language->clear();
     // Populate the languages combobox before connecting its signal.
-    const QVector<QLocale> locales = m_speech->availableLocales();
+    QVector<QLocale> locales = m_speech->availableLocales();
     QLocale current = m_speech->locale();
-
-    for (const QLocale &locale : locales)
-    {
-        QString name(QString("%1 (%2)").arg(QLocale::languageToString(locale.language())).arg(QLocale::countryToString(locale.country())));
-
+    foreach (const QLocale &locale, locales) {
+        QString name(QString("%1 (%2)")
+                     .arg(QLocale::languageToString(locale.language()))
+                     .arg(QLocale::countryToString(locale.country())));
         QVariant localeVariant(locale);
-
         ui.language->addItem(name, localeVariant);
         if (locale.name() == current.name())
             current = locale;
@@ -159,8 +141,9 @@ void MainWindow::engineSelected(int index)
 void MainWindow::languageSelected(int language)
 {
     QLocale locale = ui.language->itemData(language).toLocale();
-    m_speech->setLocale(QLocale::Language::French);
+    m_speech->setLocale(locale);
 }
+
 void MainWindow::voiceSelected(int index)
 {
     m_speech->setVoice(m_voices.at(index));
@@ -176,10 +159,7 @@ void MainWindow::localeChanged(const QLocale &locale)
 
     m_voices = m_speech->availableVoices();
     QVoice currentVoice = m_speech->voice();
-    m_voices.append(currentVoice);
-
-    qDebug()<< m_voices.toList();
-    for (const QVoice &voice : qAsConst(m_voices)) {
+    foreach (const QVoice &voice, m_voices) {
         ui.voice->addItem(QString("%1 - %2 - %3").arg(voice.name())
                           .arg(QVoice::genderName(voice.gender()))
                           .arg(QVoice::ageName(voice.age())));
